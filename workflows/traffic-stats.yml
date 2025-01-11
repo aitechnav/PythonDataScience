@@ -1,0 +1,28 @@
+name: Update Traffic Stats
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily
+  workflow_dispatch:
+
+jobs:
+  update-traffic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Fetch Traffic Data
+        run: |
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/aitechnav/PythonDataScience/traffic/views > traffic.json
+
+      - name: Update README
+        run: |
+          views=$(jq '.count' traffic.json)
+          uniques=$(jq '.uniques' traffic.json)
+          sed -i "s/<!-- VIEWS -->/$views/" README.md
+          sed -i "s/<!-- UNIQUES -->/$uniques/" README.md
+          git add README.md
+          git commit -m "Update traffic stats"
+          git push
